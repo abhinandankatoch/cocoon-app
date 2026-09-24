@@ -5,18 +5,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.NotificationsOff
-import androidx.compose.material.icons.filled.Science
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
@@ -24,22 +17,20 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 data class Preset(val label: String, val minutes: Int, val icon: ImageVector)
-
-private val defaultPresets = listOf(
-    Preset("Physics", 45, Icons.Filled.Science),
-    Preset("Coding", 60, Icons.Filled.Code),
-    Preset("Reading", 30, Icons.AutoMirrored.Filled.MenuBook)
-)
 
 @Composable
 fun HomeScreen(
     onStart: (Preset, Boolean) -> Unit,
     onOpenSettings: () -> Unit,
-    onOpenProgress: () -> Unit
+    onOpenProgress: () -> Unit,
+    viewModel: HomeViewModel = viewModel()
 ) {
+    val presets by viewModel.presets.collectAsState()
     var pomodoroEnabled by remember { mutableStateOf(false) }
+    var showAddDialog by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -77,10 +68,10 @@ fun HomeScreen(
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                defaultPresets.forEach { preset ->
+                presets.forEach { preset ->
                     PresetCard(preset = preset, onClick = { onStart(preset, pomodoroEnabled) })
                 }
-                TextButton(onClick = { /* add preset — coming soon */ }) {
+                TextButton(onClick = { showAddDialog = true }) {
                     Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(6.dp))
                     Text("Add preset")
@@ -111,6 +102,16 @@ fun HomeScreen(
         ) {
             Icon(Icons.Filled.NotificationsOff, contentDescription = "Mute settings", tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
+    }
+
+    if (showAddDialog) {
+        AddPresetDialog(
+            onDismiss = { showAddDialog = false },
+            onConfirm = { label, minutes, iconKey ->
+                viewModel.addPreset(label, minutes, iconKey)
+                showAddDialog = false
+            }
+        )
     }
 }
 

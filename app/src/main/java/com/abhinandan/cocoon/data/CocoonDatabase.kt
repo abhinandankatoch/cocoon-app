@@ -5,9 +5,10 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [SessionEntity::class], version = 1, exportSchema = false)
+@Database(entities = [SessionEntity::class, PresetEntity::class], version = 2, exportSchema = false)
 abstract class CocoonDatabase : RoomDatabase() {
     abstract fun sessionDao(): SessionDao
+    abstract fun presetDao(): PresetDao
 
     companion object {
         @Volatile private var instance: CocoonDatabase? = null
@@ -18,7 +19,9 @@ abstract class CocoonDatabase : RoomDatabase() {
                     context.applicationContext,
                     CocoonDatabase::class.java,
                     "cocoon.db"
-                ).build().also { instance = it }
+                )
+                    .fallbackToDestructiveMigration(true)
+                    .build().also { instance = it }
             }
         }
     }
