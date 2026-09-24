@@ -2,6 +2,7 @@ package com.abhinandan.cocoon.timer
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.abhinandan.cocoon.notifications.SessionState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,6 +33,7 @@ class TimerViewModel : ViewModel() {
             remainingSeconds = totalSeconds,
             status = TimerStatus.RUNNING
         )
+        SessionState.isActive = true
         startTicking()
     }
 
@@ -48,6 +50,7 @@ class TimerViewModel : ViewModel() {
 
     fun stop() {
         tickJob?.cancel()
+        SessionState.isActive = false
         _uiState.value = TimerUiState()
     }
 
@@ -60,6 +63,7 @@ class TimerViewModel : ViewModel() {
                 if (current.status != TimerStatus.RUNNING) break
                 val next = current.remainingSeconds - 1
                 _uiState.value = if (next <= 0) {
+                    SessionState.isActive = false
                     current.copy(remainingSeconds = 0, status = TimerStatus.FINISHED)
                 } else {
                     current.copy(remainingSeconds = next)
