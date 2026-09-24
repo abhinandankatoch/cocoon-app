@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.NotificationsOff
 import androidx.compose.material.icons.filled.Science
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -29,53 +30,66 @@ private val defaultPresets = listOf(
 )
 
 @Composable
-fun HomeScreen(onStart: (Preset) -> Unit) {
-    Column(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween
-    ) {
-        val titleTransition = rememberInfiniteTransition(label = "titleBreathe")
-        val titleScale by titleTransition.animateFloat(
-            initialValue = 0.97f,
-            targetValue = 1.03f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(5000, easing = EaseInOutSine),
-                repeatMode = RepeatMode.Reverse
-            ),
-            label = "titleScale"
-        )
+fun HomeScreen(onStart: (Preset) -> Unit, onOpenSettings: () -> Unit) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            val titleTransition = rememberInfiniteTransition(label = "titleBreathe")
+            val titleScale by titleTransition.animateFloat(
+                initialValue = 0.97f,
+                targetValue = 1.03f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(5000, easing = EaseInOutSine),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "titleScale"
+            )
 
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Spacer(modifier = Modifier.height(24.dp))
-            Text(
-                "Cocoon",
-                fontSize = 42.sp,
-                fontWeight = FontWeight.Light,
-                letterSpacing = 0.5.sp,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.scale(titleScale)
-            )
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(
-                "Settle in before you begin",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    "Cocoon",
+                    fontSize = 42.sp,
+                    fontWeight = FontWeight.Light,
+                    letterSpacing = 0.5.sp,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.scale(titleScale)
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    "Settle in before you begin",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                defaultPresets.forEach { preset ->
+                    PresetCard(preset = preset, onClick = { onStart(preset) })
+                }
+                TextButton(onClick = { /* add preset — coming soon */ }) {
+                    Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Add preset")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
         }
 
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-            defaultPresets.forEach { preset ->
-                PresetCard(preset = preset, onClick = { onStart(preset) })
-            }
-            TextButton(onClick = { /* add preset — coming soon */ }) {
-                Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(6.dp))
-                Text("Add preset")
-            }
+        IconButton(
+            onClick = onOpenSettings,
+            modifier = Modifier.align(Alignment.TopEnd).padding(top = 28.dp, end = 8.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Filled.NotificationsOff,
+                contentDescription = "Mute settings",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
-
-        Spacer(modifier = Modifier.height(8.dp))
     }
 }
 

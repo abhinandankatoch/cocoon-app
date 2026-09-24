@@ -16,10 +16,12 @@ import com.abhinandan.cocoon.home.HomeScreen
 import com.abhinandan.cocoon.notifications.NotificationAccess
 import com.abhinandan.cocoon.timer.TimerScreen
 import com.abhinandan.cocoon.ui.theme.CocoonTheme
+import com.abhinandan.cocoon.settings.MuteListScreen
 
 sealed class AppScreen {
     data object Home : AppScreen()
     data class Timer(val label: String, val minutes: Int) : AppScreen()
+    data object MuteSettings : AppScreen()
 }
 
 class MainActivity : ComponentActivity() {
@@ -37,13 +39,15 @@ class MainActivity : ComponentActivity() {
                     var screen by remember { mutableStateOf<AppScreen>(AppScreen.Home) }
                     when (val current = screen) {
                         is AppScreen.Home -> HomeScreen(
-                            onStart = { preset -> screen = AppScreen.Timer(preset.label, preset.minutes) }
+                            onStart = { preset -> screen = AppScreen.Timer(preset.label, preset.minutes) },
+                            onOpenSettings = { screen = AppScreen.MuteSettings }
                         )
                         is AppScreen.Timer -> TimerScreen(
                             label = current.label,
                             minutes = current.minutes,
                             onSessionEnd = { screen = AppScreen.Home }
                         )
+                        is AppScreen.MuteSettings -> MuteListScreen(onBack = { screen = AppScreen.Home })
                     }
                 }
             }
