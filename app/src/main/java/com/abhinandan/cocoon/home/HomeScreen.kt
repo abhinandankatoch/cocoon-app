@@ -20,6 +20,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 
 data class Preset(val label: String, val minutes: Int, val icon: ImageVector)
 
@@ -30,7 +33,8 @@ private val defaultPresets = listOf(
 )
 
 @Composable
-fun HomeScreen(onStart: (Preset) -> Unit, onOpenSettings: () -> Unit) {
+fun HomeScreen(onStart: (Preset, Boolean) -> Unit, onOpenSettings: () -> Unit) {
+    var pomodoroEnabled by remember { mutableStateOf(false) }
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 32.dp),
@@ -68,12 +72,20 @@ fun HomeScreen(onStart: (Preset) -> Unit, onOpenSettings: () -> Unit) {
 
             Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
                 defaultPresets.forEach { preset ->
-                    PresetCard(preset = preset, onClick = { onStart(preset) })
+                    PresetCard(preset = preset, onClick = { onStart(preset, pomodoroEnabled) })
                 }
                 TextButton(onClick = { /* add preset — coming soon */ }) {
                     Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(6.dp))
                     Text("Add preset")
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Pomodoro mode", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+                    Switch(checked = pomodoroEnabled, onCheckedChange = { pomodoroEnabled = it })
                 }
             }
 

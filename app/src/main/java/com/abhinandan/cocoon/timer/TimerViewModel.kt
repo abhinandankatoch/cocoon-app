@@ -10,12 +10,18 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 enum class TimerStatus { IDLE, RUNNING, PAUSED, FINISHED }
+enum class PomodoroPhase { WORK, BREAK }
+
+private const val BREAK_MINUTES = 5
 
 data class TimerUiState(
     val label: String = "Focus",
     val totalSeconds: Int = 25 * 60,
     val remainingSeconds: Int = 25 * 60,
-    val status: TimerStatus = TimerStatus.IDLE
+    val status: TimerStatus = TimerStatus.IDLE,
+    val isPomodoro: Boolean = false,
+    val phase: PomodoroPhase = PomodoroPhase.WORK,
+    val cycleCount: Int = 0
 )
 
 class TimerViewModel : ViewModel() {
@@ -24,14 +30,21 @@ class TimerViewModel : ViewModel() {
     val uiState: StateFlow<TimerUiState> = _uiState
 
     private var tickJob: Job? = null
+    private var workMinutes = 25
+    private var sessionLabel = "Focus"
 
-    fun start(label: String, minutes: Int) {
+    fun start(label: String, minutes: Int, isPomodoro: Boolean = false) {
+        workMinutes = minutes
+        sessionLabel = label
         val totalSeconds = minutes * 60
         _uiState.value = TimerUiState(
             label = label,
             totalSeconds = totalSeconds,
             remainingSeconds = totalSeconds,
-            status = TimerStatus.RUNNING
+            status = TimerStatus.RUNNING,
+            isPomodoro = isPomodoro,
+            phase = PomodoroPhase.WORK,
+            cycleCount = 0
         )
         SessionState.isActive = true
         startTicking()
@@ -62,13 +75,39 @@ class TimerViewModel : ViewModel() {
                 val current = _uiState.value
                 if (current.status != TimerStatus.RUNNING) break
                 val next = current.remainingSeconds - 1
+
                 _uiState.value = if (next <= 0) {
-                    SessionState.isActive = false
-                    current.copy(remainingSeconds = 0, status = TimerStatus.FINISHED)
+                    handlePhaseComplete(current)
                 } else {
                     current.copy(remainingSeconds = next)
                 }
             }
+        }
+    }
+
+    private fun handlePhaseComplete(current: TimerUiState): TimerUiState {
+        if (!current.isPomodoro) {
+            SessionState.isActive = false
+            return current.copy(remainingSeconds = 0, status = TimerStatus.FINISHED)
+        }
+
+        return if (current.phase == PomodoroPhase.WORK) {
+            val breakSeconds = BREAK_MINUTES * 60
+            current.copy(
+                phase = PomodoroPhase.BREAK,
+                totalSeconds = breakSeconds,
+                remainingSeconds = breakSeconds,
+                label = "Break"
+            )
+        } else {
+            val workSeconds = workMinutes * 60
+            current.copy(
+                phase = PomodoroPhase.WORK,
+                totalSeconds = workSeconds,
+                remainingSeconds = workSeconds,
+                label = sessionLabel,
+                cycleCount = current.cycleCount + 1
+            )
         }
     }
 

@@ -14,13 +14,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.abhinandan.cocoon.home.HomeScreen
 import com.abhinandan.cocoon.notifications.NotificationAccess
+import com.abhinandan.cocoon.settings.MuteListScreen
 import com.abhinandan.cocoon.timer.TimerScreen
 import com.abhinandan.cocoon.ui.theme.CocoonTheme
-import com.abhinandan.cocoon.settings.MuteListScreen
 
 sealed class AppScreen {
     data object Home : AppScreen()
-    data class Timer(val label: String, val minutes: Int) : AppScreen()
+    data class Timer(val label: String, val minutes: Int, val isPomodoro: Boolean) : AppScreen()
     data object MuteSettings : AppScreen()
 }
 
@@ -29,7 +29,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         if (!NotificationAccess.isGranted(this)) {
-            Toast.makeText(this, "Cocoon needs notification access to mute apps during a session", Toast.LENGTH_LONG).show()
+            Toast.makeText(
+                this,
+                "Cocoon needs notification access to mute apps during a session",
+                Toast.LENGTH_LONG
+            ).show()
             NotificationAccess.requestAccess(this)
         }
 
@@ -39,15 +43,20 @@ class MainActivity : ComponentActivity() {
                     var screen by remember { mutableStateOf<AppScreen>(AppScreen.Home) }
                     when (val current = screen) {
                         is AppScreen.Home -> HomeScreen(
-                            onStart = { preset -> screen = AppScreen.Timer(preset.label, preset.minutes) },
+                            onStart = { preset, isPomodoro ->
+                                screen = AppScreen.Timer(preset.label, preset.minutes, isPomodoro)
+                            },
                             onOpenSettings = { screen = AppScreen.MuteSettings }
                         )
                         is AppScreen.Timer -> TimerScreen(
                             label = current.label,
                             minutes = current.minutes,
+                            isPomodoro = current.isPomodoro,
                             onSessionEnd = { screen = AppScreen.Home }
                         )
-                        is AppScreen.MuteSettings -> MuteListScreen(onBack = { screen = AppScreen.Home })
+                        is AppScreen.MuteSettings -> MuteListScreen(
+                            onBack = { screen = AppScreen.Home }
+                        )
                     }
                 }
             }

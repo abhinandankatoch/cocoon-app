@@ -22,13 +22,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 fun TimerScreen(
     label: String,
     minutes: Int,
+    isPomodoro: Boolean,
     onSessionEnd: () -> Unit,
     viewModel: TimerViewModel = viewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
 
-    LaunchedEffect(label, minutes) {
-        viewModel.start(label = label, minutes = minutes)
+    LaunchedEffect(label, minutes, isPomodoro) {
+        viewModel.start(label = label, minutes = minutes, isPomodoro = isPomodoro)
     }
 
     LaunchedEffect(state.status) {
@@ -46,6 +47,12 @@ fun TimerScreen(
         label = "breatheScale"
     )
 
+    val circleColor = if (state.phase == PomodoroPhase.BREAK) {
+        MaterialTheme.colorScheme.secondary.copy(alpha = 0.30f)
+    } else {
+        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+    }
+
     Column(
         modifier = Modifier.fillMaxSize().padding(28.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -53,12 +60,22 @@ fun TimerScreen(
     ) {
         Spacer(modifier = Modifier.height(24.dp))
 
-        Text(state.label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(state.label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (state.isPomodoro) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    "Round ${state.cycleCount + 1}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
 
         Box(contentAlignment = Alignment.Center) {
             Box(
                 modifier = Modifier.size(220.dp).scale(breatheScale)
-                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f), CircleShape)
+                    .background(circleColor, CircleShape)
             )
             Text(
                 text = formatTime(state.remainingSeconds),
