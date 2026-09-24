@@ -7,27 +7,44 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.abhinandan.cocoon.home.HomeScreen
 import com.abhinandan.cocoon.notifications.NotificationAccess
 import com.abhinandan.cocoon.timer.TimerScreen
+import com.abhinandan.cocoon.ui.theme.CocoonTheme
+
+sealed class AppScreen {
+    data object Home : AppScreen()
+    data class Timer(val label: String, val minutes: Int) : AppScreen()
+}
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         if (!NotificationAccess.isGranted(this)) {
-            Toast.makeText(
-                this,
-                "Cocoon needs notification access to mute apps during a session",
-                Toast.LENGTH_LONG
-            ).show()
+            Toast.makeText(this, "Cocoon needs notification access to mute apps during a session", Toast.LENGTH_LONG).show()
             NotificationAccess.requestAccess(this)
         }
 
         setContent {
-            MaterialTheme {
-                Surface(modifier = Modifier.fillMaxSize()) {
-                    TimerScreen()
+            CocoonTheme {
+                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+                    var screen by remember { mutableStateOf<AppScreen>(AppScreen.Home) }
+                    when (val current = screen) {
+                        is AppScreen.Home -> HomeScreen(
+                            onStart = { preset -> screen = AppScreen.Timer(preset.label, preset.minutes) }
+                        )
+                        is AppScreen.Timer -> TimerScreen(
+                            label = current.label,
+                            minutes = current.minutes,
+                            onSessionEnd = { screen = AppScreen.Home }
+                        )
+                    }
                 }
             }
         }
