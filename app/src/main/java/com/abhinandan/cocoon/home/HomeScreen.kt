@@ -7,12 +7,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.NotificationsOff
 import androidx.compose.material.icons.filled.Science
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
@@ -20,9 +24,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 
 data class Preset(val label: String, val minutes: Int, val icon: ImageVector)
 
@@ -33,8 +34,13 @@ private val defaultPresets = listOf(
 )
 
 @Composable
-fun HomeScreen(onStart: (Preset, Boolean) -> Unit, onOpenSettings: () -> Unit) {
+fun HomeScreen(
+    onStart: (Preset, Boolean) -> Unit,
+    onOpenSettings: () -> Unit,
+    onOpenProgress: () -> Unit
+) {
     var pomodoroEnabled by remember { mutableStateOf(false) }
+
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 32.dp),
@@ -93,14 +99,17 @@ fun HomeScreen(onStart: (Preset, Boolean) -> Unit, onOpenSettings: () -> Unit) {
         }
 
         IconButton(
+            onClick = onOpenProgress,
+            modifier = Modifier.align(Alignment.TopStart).padding(top = 28.dp, start = 8.dp)
+        ) {
+            Icon(Icons.Filled.BarChart, contentDescription = "Progress", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+
+        IconButton(
             onClick = onOpenSettings,
             modifier = Modifier.align(Alignment.TopEnd).padding(top = 28.dp, end = 8.dp)
         ) {
-            Icon(
-                imageVector = Icons.Filled.NotificationsOff,
-                contentDescription = "Mute settings",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Icon(Icons.Filled.NotificationsOff, contentDescription = "Mute settings", tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

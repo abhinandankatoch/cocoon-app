@@ -14,6 +14,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.abhinandan.cocoon.home.HomeScreen
 import com.abhinandan.cocoon.notifications.NotificationAccess
+import com.abhinandan.cocoon.progress.ProgressScreen
 import com.abhinandan.cocoon.settings.MuteListScreen
 import com.abhinandan.cocoon.timer.TimerScreen
 import com.abhinandan.cocoon.ui.theme.CocoonTheme
@@ -22,6 +23,7 @@ sealed class AppScreen {
     data object Home : AppScreen()
     data class Timer(val label: String, val minutes: Int, val isPomodoro: Boolean) : AppScreen()
     data object MuteSettings : AppScreen()
+    data object Progress : AppScreen()
 }
 
 class MainActivity : ComponentActivity() {
@@ -46,7 +48,8 @@ class MainActivity : ComponentActivity() {
                             onStart = { preset, isPomodoro ->
                                 screen = AppScreen.Timer(preset.label, preset.minutes, isPomodoro)
                             },
-                            onOpenSettings = { screen = AppScreen.MuteSettings }
+                            onOpenSettings = { screen = AppScreen.MuteSettings },
+                            onOpenProgress = { screen = AppScreen.Progress }
                         )
                         is AppScreen.Timer -> TimerScreen(
                             label = current.label,
@@ -54,9 +57,8 @@ class MainActivity : ComponentActivity() {
                             isPomodoro = current.isPomodoro,
                             onSessionEnd = { screen = AppScreen.Home }
                         )
-                        is AppScreen.MuteSettings -> MuteListScreen(
-                            onBack = { screen = AppScreen.Home }
-                        )
+                        is AppScreen.MuteSettings -> MuteListScreen(onBack = { screen = AppScreen.Home })
+                        is AppScreen.Progress -> ProgressScreen(onBack = { screen = AppScreen.Home })
                     }
                 }
             }

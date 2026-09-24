@@ -1,7 +1,10 @@
 package com.abhinandan.cocoon.timer
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.abhinandan.cocoon.data.CocoonDatabase
+import com.abhinandan.cocoon.data.SessionEntity
 import com.abhinandan.cocoon.notifications.SessionState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -13,6 +16,7 @@ enum class TimerStatus { IDLE, RUNNING, PAUSED, FINISHED }
 enum class PomodoroPhase { WORK, BREAK }
 
 private const val BREAK_MINUTES = 5
+private const val MIN_LOGGABLE_SECONDS = 60
 
 data class TimerUiState(
     val label: String = "Focus",
@@ -24,7 +28,9 @@ data class TimerUiState(
     val cycleCount: Int = 0
 )
 
-class TimerViewModel : ViewModel() {
+class TimerViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val sessionDao = CocoonDatabase.getInstance(application).sessionDao()
 
     private val _uiState = MutableStateFlow(TimerUiState())
     val uiState: StateFlow<TimerUiState> = _uiState
@@ -32,10 +38,12 @@ class TimerViewModel : ViewModel() {
     private var tickJob: Job? = null
     private var workMinutes = 25
     private var sessionLabel = "Focus"
+    private var elapsedWorkSeconds = 0
 
     fun start(label: String, minutes: Int, isPomodoro: Boolean = false) {
         workMinutes = minutes
         sessionLabel = label
+        elapsedWorkSeconds = 0
         val totalSeconds = minutes * 60
         _uiState.value = TimerUiState(
             label = label,
@@ -64,6 +72,7 @@ class TimerViewModel : ViewModel() {
     fun stop() {
         tickJob?.cancel()
         SessionState.isActive = false
+        logSessionIfNeeded()
         _uiState.value = TimerUiState()
     }
 
@@ -74,8 +83,9 @@ class TimerViewModel : ViewModel() {
                 delay(1000)
                 val current = _uiState.value
                 if (current.status != TimerStatus.RUNNING) break
-                val next = current.remainingSeconds - 1
+                if (current.phase == PomodoroPhase.WORK) elapsedWorkSeconds++
 
+                val next = current.remainingSeconds - 1
                 _uiState.value = if (next <= 0) {
                     handlePhaseComplete(current)
                 } else {
@@ -88,6 +98,7 @@ class TimerViewModel : ViewModel() {
     private fun handlePhaseComplete(current: TimerUiState): TimerUiState {
         if (!current.isPomodoro) {
             SessionState.isActive = false
+            logSessionIfNeeded()
             return current.copy(remainingSeconds = 0, status = TimerStatus.FINISHED)
         }
 
@@ -109,6 +120,22 @@ class TimerViewModel : ViewModel() {
                 cycleCount = current.cycleCount + 1
             )
         }
+    }
+
+    private fun logSessionIfNeeded() {
+        if (elapsedWorkSeconds < MIN_LOGGABLE_SECONDS) return
+        val minutes = elapsedWorkSeconds / 60
+        val label = sessionLabel
+        viewModelScope.launch {
+            sessionDao.insert(
+                SessionEntity(
+                    label = label,
+                    durationMinutes = minutes,
+                    timestampMillis = System.currentTimeMillis()
+                )
+            )
+        }
+        elapsedWorkSeconds = 0
     }
 
     override fun onCleared() {
